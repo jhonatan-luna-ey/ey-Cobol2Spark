@@ -1,0 +1,37 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. READCSV.
+
+       FILE-CONTROL.
+            SELECT CSV-FILE ASSIGN TO 'INPUT.csv'
+            ORGANIZATION IS LINE SEQUENTIAL
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  CSV-FILE
+           DATA RECORD IS CSV-LINE.
+       01  CSV-LINE                        PIC X(100).
+
+       WORKING-STORAGE SECTION.
+       01  END-OF-FILE                    PIC X VALUE 'N'.
+       01  LINE-COUNTER                   PIC 9(02) VALUE 0.
+         
+       PROCEDURE DIVISION.
+       OPEN-FILE.
+           OPEN INPUT CSV-FILE.
+
+       READ-LOOP.
+           PERFORM UNTIL END-OF-FILE = 'Y'
+               OR LINE-COUNTER >= 5
+               READ CSV-FILE
+                  AT END
+                     MOVE 'Y' TO END-OF-FILE
+                  NOT AT END
+                     DISPLAY CSV-LINE
+                     ADD 1 TO LINE-COUNTER
+               END-READ
+           END-PERFORM.
+
+       CLOSE-FILE.
+           CLOSE CSV-FILE.
+
+       STOP RUN.

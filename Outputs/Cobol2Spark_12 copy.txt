@@ -1,0 +1,43 @@
+Here is the equivalent PySpark code for the COBOL program:
+
+```python
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, when
+
+# Create Spark Session
+spark = SparkSession.builder.appName("DWSD0612").getOrCreate()
+
+# Load input files into dataframes
+df_arqparm = spark.read.text("path_to_ARQPARM")
+df_arqsrt = spark.read.text("path_to_ARQSORT")
+df_dimestip = spark.read.text("path_to_DIMESTIP")
+df_arqftp = spark.read.text("path_to_ARQFTP")
+
+# Define SQL environment and open input files
+spark.sql("USE ATSAUDAO")
+spark.sql("USE DBSISA")
+
+# Read parameters from ARQPARM
+params = df_arqparm.first()[0]
+
+# Fetch data from ATSAUDAO.SSCESTIPULANTE table and filter based on conditions
+df_sscestipulante = spark.sql(f"SELECT * FROM ATSAUDAO.SSCESTIPULANTE WHERE ETP-AMD-CANCEL != 0 AND (conditions)")
+
+# Sort the data
+df_sorted = df_sscestipulante.sort(['NUM-CGC-SORT', 'DATA-CANCEL-SORT', 'DATA-INIC-SORT', 'NUM-DV-CGC-SORT', 'COD-CIA-SORT', 'COD-APOLICE-SORT'])
+
+# Write the data into output files
+df_sorted.write.text("path_to_ARQSORT")
+df_sorted.write.text("path_to_DIMESTIP")
+
+# Write header and trailer records to DIMESTIP
+header = spark.createDataFrame([(0, params, 'DWSD0612')], ['TIPO-REG-H-ETP', 'DATA-INI-H-ETP', 'NOME-PGM-H-ETP'])
+trailer = spark.createDataFrame([(9, params, df_sorted.count())], ['TIPO-REG-T-ETP', 'DATA-SISTEMA-T-ETP', 'QTDE-REGISTROS-T-ETP'])
+df_dimestip = header.union(df_sorted).union(trailer)
+df_dimestip.write.text("path_to_DIMESTIP")
+
+# Close all files and tables
+spark.stop()
+```
+
+Please note that this is a simplified version of the conversion and does not include all the details of the original COBOL program. Some parts of the COBOL program, such as error handling and specific business rules, are not directly translatable to PySpark and would require additional context or logic to implement correctly. Also, the paths to the files need to be replaced with actual file locations.

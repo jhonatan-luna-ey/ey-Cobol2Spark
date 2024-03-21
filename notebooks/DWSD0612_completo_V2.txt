@@ -1,0 +1,1417 @@
+       IDENTIFICATION DIVISION.                                         
+                                                                        
+       PROGRAM-ID.    DWSD0612.                                         
+       AUTHOR.        CLAUDIA MARIA.                                    
+       ENVIRONMENT DIVISION.                                            
+       CONFIGURATION SECTION.                                           
+       SPECIAL-NAMES.                                                   
+                     DECIMAL-POINT IS COMMA.                            
+       INPUT-OUTPUT  SECTION.                                           
+       FILE-CONTROL.                                                    
+           SELECT ARQPARM       ASSIGN    TO ARQPARM.                   
+                                                                        
+           SELECT ARQSORT       ASSIGN    TO ARQSORT.                   
+                                                                        
+           SELECT DIMESTIP      ASSIGN    TO DIMESTIP.                  
+                                                                        
+           SELECT ARQFTP        ASSIGN    TO ARQFTP.                    
+       DATA DIVISION.                                                   
+       FILE SECTION.                                                    
+       FD  ARQPARM                                                      
+           BLOCK CONTAINS 0 RECORDS                                     
+           RECORDING MODE IS F                                          
+           LABEL RECORD IS STANDARD.                                    
+       01  REG-PARAMETRO                 PIC X(80).                     
+       SD  ARQSORT.                                                     
+       01  REG-ARQSORT.                                                 
+           03 NUM-CGC-SORT               PIC 9(12).                     
+		   03 DATA-CANCEL-SORT           PIC 9(08).                     
+           03 DATA-INIC-SORT             PIC 9(08).                     
+           03 FILLER   REDEFINES DATA-INIC-SORT.                        
+              05 ANO-INIC-SORT           PIC 9(04).                     
+              05 MES-INIC-SORT           PIC 9(02).                     
+              05 DIA-INIC-SORT           PIC 9(02).                     
+           03 NUM-DV-CGC-SORT            PIC 9(02).                     
+           03 COD-CIA-SORT               PIC 9(03).                     
+		   03 COD-APOLICE-SORT           PIC 9(07).                     
+           03 NOME-ESTIP-SORT            PIC X(35).                     
+           03 COD-ATIV-SORT              PIC 9(04).                     
+       FD  DIMESTIP                                                     
+           BLOCK CONTAINS 0 RECORDS                                     
+           RECORDING MODE IS F                                          
+           LABEL RECORD IS STANDARD.                                    
+     01  REG-ESTIPULANTE               PIC X(68).                     
+           FD  ARQFTP                                                       
+               BLOCK CONTAINS 0 RECORDS                                     
+               RECORD CONTAINS 80                                           
+               RECORDING MODE IS F                                          
+               LABEL RECORDS IS STANDARD.                                   
+           01  FTP-REGISTRO                 PIC X(80).                      
+           WORKING-STORAGE SECTION.                                         
+           77  WS-SDCDSUC                       PIC  9(003)    VALUE 0.     
+           77  WS-ABEND                  COMP   PIC S9(04)     VALUE +0777. 
+           77  WS-SQLCODE                       PIC ---------9 VALUE ZEROS. 
+           77  WS-QTDE-SUBF                     PIC S9(09) USAGE COMP.      
+           77  NCOB1660                         PIC  X(08) VALUE 'NCOB1660'.
+           01  LN-FTP-01.                                                   
+               03 FILLER         PIC X(80) VALUE 'ANONYMOUS'.               
+           01  LN-FTP-02.                                                   
+               03 FILLER         PIC X(80) VALUE 'ANONYMOUS'.               
+           01  LN-FTP-03.                                                   
+               03 FILLER         PIC X(04) VALUE 'CD  '.                    
+               03 DIRETORIO      PIC X(76).                                 
+           01  LN-FTP-04.                                                   
+               03 FILLER         PIC X(04) VALUE 'LCD '.                    
+               03 FILLER         PIC X(01) VALUE ''''.                      
+               03 FILLER         PIC X(16) VALUE 'BS.DWSD.DWSD0619'.        
+               03 FILLER         PIC X(01) VALUE ''''.                      
+           01  LN-FTP-05.                                                   
+               03 FILLER         PIC X(80) VALUE                            
+                  'PUT ESTIP ESTIP.TMP'.                                    
+           01  LN-FTP-06.                                                   
+               03 FILLER         PIC X(28) VALUE                            
+                  'RENAME ESTIP.TMP DWSD_ESTIP_'.                           
+               03 LN-DATA        PIC 9(08).                                 
+               03 FILLER         PIC X(38) VALUE '.dat'.                    
+           01  LN-FTP-07.                                                   
+               03 FILLER         PIC X(80) VALUE 'CLOSE'.                   
+           01  LN-FTP-08.                                                   
+               03 FILLER         PIC X(80) VALUE 'QUIT'.                    
+           01  WS-HORA-SISTEMA                  PIC X(06).                  
+           01  WS-HORA-SIST-R     REDEFINES     WS-HORA-SISTEMA.            
+               03 WS-HH-SIST                    PIC X(02).                  
+          03 WS-MM-SIST                    PIC X(02).                  
+          03 WS-SS-SIST                    PIC X(02).                  
+                                                                       
+      01  WS-HORA-CORRENTE                 PIC X(06).                  
+      01  WS-HORA-CORREN-R   REDEFINES     WS-HORA-CORRENTE.           
+          03 WS-HH-CORR                    PIC X(02).                  
+          03 WS-MM-CORR                    PIC X(02).                  
+          03 WS-SS-CORR                    PIC X(02).                  
+                                                                       
+      01  WS-HORA-DISPLAY                  PIC X(08).                  
+      01  WS-HORA-DISPLY-R REDEFINES WS-HORA-DISPLAY.                  
+          03 WS-HH-DISPLY                  PIC X(02).                  
+          03 WS-BR3-DISPLY                 PIC X(01).                  
+          03 WS-MM-DISPLY                  PIC X(02).                  
+          03 WS-BR4-DISPLY                 PIC X(01).                  
+          03 WS-SS-DISPLY                  PIC X(02).                  
+                                                                       
+      01  WS-DATA-SISTEMA                  PIC 9(08).                  
+      01  WS-DATA-SIST-R    REDEFINES      WS-DATA-SISTEMA.            
+          03 WS-SEC-SIST                   PIC 9(02).                  
+          03 WS-ANO-SIST                   PIC 9(02).                  
+          03 WS-MES-SIST                   PIC 9(02).                  
+          03 WS-DIA-SIST                   PIC 9(02).                  
+                                                                       
+      01  WS-DATA-CORRENTE                 PIC 9(08).                  
+      01  WS-DATA-CORR-R    REDEFINES      WS-DATA-CORRENTE.           
+          03 WS-MES-CORR                   PIC X(02).                  
+          03 FILLER                        PIC X(01).                  
+          03 WS-DIA-CORR                   PIC X(02).                  
+          03 FILLER                        PIC X(01).                  
+          03 WS-ANO-CORR                   PIC X(02).                  
+                                                                       
+      01  WS-DATA-DISPLAY                  PIC X(10).                  
+      01  WS-DATA-DISP-R    REDEFINES      WS-DATA-DISPLAY.            
+          03 WS-DIA-DISPLAY                PIC X(02).                  
+          03 WS-BR1-DISPLAY                PIC X(01).                  
+          03 WS-MES-DISPLAY                PIC X(02).                  
+          03 WS-BR2-DISPLAY                PIC X(01).                  
+          03 WS-SEC-DISPLAY                PIC X(02).                  
+          03 WS-ANO-DISPLAY                PIC X(02).                  
+                                                                       
+      01  WS-DATA-INIC                     PIC 9(08).                  
+      01  WS-DATA-INIC-R    REDEFINES      WS-DATA-INIC.               
+          03 WS-DIA-INIC                   PIC X(02).                  
+          03 WS-MES-INIC                   PIC X(02).                  
+          03 WS-SEC-INIC                   PIC X(02).                  
+          03 WS-ANO-INIC                   PIC X(02).                  
+                                                                       
+      01  WS-DATA-INIC-INV                 PIC 9(08).                  
+      01  WS-DATA-INIC-INV-R REDEFINES     WS-DATA-INIC-INV.           
+          03 WS-SEC-INV                    PIC X(02).                  
+          03 WS-ANO-INV                    PIC X(02).                  
+          03 WS-MES-INV                    PIC X(02).                  
+          03 WS-DIA-INV                    PIC X(02).                  
+                                                                       
+      01  DATA-INI-SEL                     PIC S9(09) COMP.            
+      01  DATA-FIM-SEL                     PIC S9(09) COMP.            
+                                                                       
+      01  WS-DATA-INI                      PIC  9(08).                 
+      01  FILLER         REDEFINES    WS-DATA-INI.                     
+          03 WS-ANO-INI                    PIC 9(04).                  
+          03 WS-MES-INI                    PIC 9(02).                  
+          03 WS-DIA-INI                    PIC 9(02).                  
+                                                                       
+      01  WS-DATA-FIM                      PIC  9(08).                 
+      01  FILLER         REDEFINES      WS-DATA-FIM.                   
+          03 WS-ANO-FIM                    PIC 9(04).                  
+          03 WS-MES-FIM                    PIC 9(02).                  
+          03 WS-DIA-FIM                    PIC 9(02).                  
+                                                                       
+      01  WS-DESC-NM-CHAVE.                                            
+          03 WS-DESC-NM-CHAVE-CIA          PIC 9(03).                  
+          03 WS-DESC-NM-CHAVE-APO          PIC 9(06).                  
+      01  WS-DESC-NM-CHAVE-R REDEFINES WS-DESC-NM-CHAVE PIC X(11).     
+                                                                       
+	   01  WS-DESC-NM-CHAVE-7.
+          03 WS-DESC-NM-CHAVE-CIA-7        PIC 9(03) VALUE ZEROS.
+          03 WS-DESC-NM-CHAVE-APO-7        PIC 9(07) VALUE ZEROS.
+     
+      01  WS-MOVI-NM-COMPL-REAV            PIC X(150) VALUE SPACES.
+      01  WS-MOVI-NM-COMPL-REAV-R REDEFINES WS-MOVI-NM-COMPL-REAV.
+          03 WS-AAAAMMDD-CORTE-REAV        PIC 9(08).
+          03 FILLER                        PIC X(142).
+     
+      01  WS-CONTADORES.                                               
+          03 WS-QTDE-ETP                   PIC 9(09) VALUE ZEROS.      
+          03 WS-LIDOS-SORT                 PIC 9(09) VALUE ZEROS.      
+          03 WS-LIDOS-CURSOR-ATETP         PIC 9(09) VALUE ZEROS.      
+          03 WS-LIDOS-CURSOR-DBETP         PIC 9(09) VALUE ZEROS.      
+          03 WS-CONT-CGC-ZERADOS           PIC 9(09) VALUE ZEROS.      
+          03 WS-CGC-ZERADOS-ZZZ            PIC ZZZ.ZZZ.ZZ9.            
+          03 WS-LIDOS-ZZZ-ATETP            PIC ZZZ.ZZZ.ZZ9.            
+          03 WS-LIDOS-ZZZ-DBETP            PIC ZZZ.ZZZ.ZZ9.            
+          03 WS-GRAVADOS-ETP               PIC 9(09) VALUE ZEROS.      
+          03 WS-GRAVADOS-SORT              PIC 9(09) VALUE ZEROS.      
+          03 WS-GRAVA-ZZZ                  PIC ZZZ.ZZZ.ZZ9.            
+                                                                       
+      01  AUXILIARES.                                                  
+          03 WS-FIM-SORT                   PIC X(03)      VALUE 'NAO'. 
+          03 WS-COMANDO                    PIC X(30)      VALUE SPACES.
+          03 WS-CGC-ANT                    PIC 9(12)      VALUE ZEROS. 
+          03 WS-DATA-INIC-ANT              PIC 9(08)      VALUE ZEROS. 
+          03 WS-DV-CGC-ANT                 PIC 9(02)      VALUE ZEROS. 
+          03 WS-COD-CIA-ANT                PIC 9(03)      VALUE ZEROS. 
+          03 WS-COD-APOL-ANT               PIC 9(07)      VALUE ZEROS. 
+          03 WS-NOME-ESTIP-ANT             PIC X(35)      VALUE SPACES.
+          03 WS-COD-ATIV-ANT               PIC 9(04)      VALUE ZEROS. 
+                                                                       
+      01  WS-CGC-INTEIRO                   PIC 9(14).                  
+      01  FILLER          REDEFINES     WS-CGC-INTEIRO.                
+          03 WS-CGC-SDV                    PIC 9(12).                  
+          03 WS-CGC-DV                     PIC 9(02).                  
+                                                                       
+      01  WS-IDENT-APOL.                                               
+          03 WS-CIA                        PIC 9(03).                  
+          03 WS-APOLICE                    PIC 9(07).                  
+      01  WS-IDENT-APOL-R REDEFINES WS-IDENT-APOL PIC X(10).           
+                                                                       
+      01  WS-CODIGO-CNPJ.                                              
+          03 WS-COD-BASE                   PIC 9(08).                  
+          03 WS-COD-FILIAL                 PIC 9(04).                  
+      01  WS-CODIGO-CNPJ-R REDEFINES WS-CODIGO-CNPJ PIC X(12).         
+                                                                       
+                                                                     
+      01  WS-CAMPOS-ATSAUDAO-ETP.                                      
+          03 WS-CIA-ATSAUDAO               PIC S9(04)  USAGE COMP.     
+          03 WS-APOLICE-ATSAUDAO           PIC S9(09)  USAGE COMP.     
+          03 WS-RSOCIAL-ATSAUDAO           PIC  X(35).                 
+          03 WS-CGC-ATSAUDAO               PIC  9(15).                 
+          03 FILLER REDEFINES WS-CGC-ATSAUDAO.                         
+             05 FILLER                     PIC  X(01).                 
+             05 WS-CGC-SDV-ATSAUDAO        PIC  9(12).                 
+             05 WS-CGC-DV-ATSAUDAO         PIC  9(02).                 
+          03 WS-CODIGO-ATIV-ATSAUDAO       PIC S9(04)  USAGE COMP.     
+          03 WS-RMO-ATSAUDAO               PIC S9(03)  USAGE COMP.     
+          03 WS-AMD-INICIO-ATSAUDAO        PIC S9(09)  USAGE COMP.     
+                                                                       
+                                                                       
+      01  WS-CAMPOS-DBSAUDE-ETP.                                       
+          03 WS-CIA-DBSAUDE                PIC S9(04)  USAGE COMP.     
+          03 WS-APOLICE-DBSAUDE            PIC S9(09)  USAGE COMP.     
+          03 WS-NOME-DBSAUDE               PIC  X(35).                 
+          03 WS-CGC-DBSAUDE                PIC  9(15).                 
+          03 FILLER REDEFINES WS-CGC-DBSAUDE.                          
+             05 FILLER                     PIC  X(01).                 
+             05 WS-CGC-SDV-DBSAUDE         PIC  9(12).                 
+             05 WS-CGC-DV-DBSAUDE          PIC  9(02).                 
+          03 WS-DT-INICIO-DBSAUDE          PIC S9(09)V USAGE COMP-3.   
+                                                                       
+          COPY DWSD1001.                                               
+      01  REGISTRO-PARAMETRO.                                          
+          03 DATA-CORTE                      PIC 9(008).               
+          03 FILLER      REDEFINES    DATA-CORTE.                      
+             05 ANO-CORTE                    PIC 9(004).               
+             05 MES-CORTE                    PIC 9(002).               
+             05 DIA-CORTE                    PIC 9(002).               
+          03 FILLER      REDEFINES    DATA-CORTE.                      
+             05 SEC-CORTE                    PIC 9(002).               
+             05 FILLER                       PIC 9(006).               
+          03 DATA-INI                        PIC 9(008).               
+          03 FILLER      REDEFINES    DATA-INI.                        
+             05 ANO-INI                      PIC 9(004).               
+             05 MES-INI                      PIC 9(002).               
+             05 DIA-INI                      PIC 9(002).               
+          03 FILLER      REDEFINES    DATA-INI.                        
+             05 SEC-INI                      PIC 9(002).               
+             05 FILLER                       PIC 9(006).               
+          03 DATA-FIM                        PIC 9(008).               
+          03 FILLER      REDEFINES    DATA-FIM.                        
+             05 ANO-FIM                      PIC 9(004).               
+             05 MES-FIM                      PIC 9(002).               
+             05 DIA-FIM                      PIC 9(002).               
+          03 FILLER      REDEFINES    DATA-FIM.                        
+             05 SEC-FIM                      PIC 9(002).               
+             05 FILLER                       PIC 9(006).               
+          03 DATA-PROC                       PIC 9(008).               
+          03 FILLER      REDEFINES    DATA-PROC.                       
+             05 ANO-PROC                     PIC 9(004).               
+             05 MES-PROC                     PIC 9(002).               
+             05 DIA-PROC                     PIC 9(002).               
+          03 FILLER      REDEFINES    DATA-PROC.                       
+             05 SEC-PROC                     PIC 9(002).               
+             05 FILLER                       PIC 9(006).               
+          03 DATA-PROX                       PIC 9(008).               
+          03 FILLER      REDEFINES    DATA-PROX.                       
+             05 ANO-PROX                     PIC 9(004).               
+             05 MES-PROX                     PIC 9(002).               
+             05 DIA-PROX                     PIC 9(002).               
+          03 FILLER      REDEFINES    DATA-PROX.                       
+             05 SEC-PROX                     PIC 9(002).               
+             05 FILLER                       PIC 9(006).               
+          03 DATA-PROC-MENSAL                PIC 9(006).               
+          03 FILLER      REDEFINES    DATA-PROC-MENSAL.                
+             05 ANO-PROC-MENSAL              PIC 9(004).               
+             05 MES-PROC-MENSAL              PIC 9(002).               
+          03 FILLER      REDEFINES    DATA-PROC-MENSAL.                
+             05 SEC-PROC-MENSAL              PIC 9(002).               
+             05 FILLER                       PIC 9(004).               
+          03 DATA-PROX-MENSAL                PIC 9(006).               
+          03 FILLER      REDEFINES    DATA-PROX-MENSAL.                
+             05 ANO-PROX-MENSAL              PIC 9(004).               
+             05 MES-PROX-MENSAL              PIC 9(002).               
+          03 FILLER      REDEFINES    DATA-PROX-MENSAL.                
+             05 SEC-PROX-MENSAL              PIC 9(002).               
+             05 FILLER                       PIC 9(004).               
+          03 DATA-INI-PROC-MENSAL            PIC 9(008).               
+          03 FILLER      REDEFINES    DATA-INI-PROC-MENSAL.            
+             05 ANO-INI-PROC-MENSAL          PIC 9(004).               
+             05 MES-INI-PROC-MENSAL          PIC 9(002).               
+             05 DIA-INI-PROC-MENSAL          PIC 9(002).               
+          03 FILLER      REDEFINES    DATA-INI-PROC-MENSAL.            
+             05 SEC-INI-PROC-MENSAL          PIC 9(002).               
+             05 FILLER                       PIC 9(006).               
+          03 DATA-FIM-PROC-MENSAL            PIC 9(008).               
+          03 FILLER      REDEFINES    DATA-FIM-PROC-MENSAL.            
+             05 ANO-FIM-PROC-MENSAL          PIC 9(004).               
+             05 MES-FIM-PROC-MENSAL          PIC 9(002).               
+             05 DIA-FIM-PROC-MENSAL          PIC 9(002).               
+          03 FILLER      REDEFINES    DATA-FIM-PROC-MENSAL.            
+             05 SEC-FIM-PROC-MENSAL          PIC 9(002).               
+             05 FILLER                       PIC 9(006).               
+          03 ULTIMA-OPCAO1                   PIC X(001).               
+          03 ULTIMA-OPCAO2                   PIC X(001).               
+                                                                         
+      01  REGISTRO-ESTIP                     PIC X(68).                
+      01  REG-HEADER-ETP        REDEFINES    REGISTRO-ESTIP.           
+          03 TIPO-REG-H-ETP                  PIC 9(01).                
+          03 DATA-SISTEMA-H-ETP              PIC 9(08).                
+          03 HORA-SISTEMA-H-ETP              PIC 9(06).                
+          03 DATA-INI-H-ETP                  PIC 9(08).                
+          03 DATA-FIM-H-ETP                  PIC 9(08).                
+          03 NOME-PGM-H-ETP                  PIC X(08).                
+          03 FILLER                          PIC X(29).                
+      01  REG-DETALHE-ETP       REDEFINES    REGISTRO-ESTIP.           
+          03 TIPO-REG-D-ETP                  PIC 9(01).                
+          03 COD-ORIGEM-D-ETP                PIC 9(04).                
+          03 IDENT-APOLICE-D-ETP             PIC 9(10).                
+          03 NOME-ESTIPULANTE-D-ETP          PIC X(35).                
+          03 CHAVE-OLTP.                                               
+             05 CODIGO-BASE-D-ETP            PIC 9(08).                
+             05 CODIGO-FILIAL-D-ETP          PIC 9(04).                
+          03 CODIGO-DV-D-ETP                 PIC 9(02).                
+          03 IDENT-RAMO-ATIV-D-ETP           PIC 9(04).                
+      01  REG-TRAILLER-ETP      REDEFINES    REGISTRO-ESTIP.           
+          03 TIPO-REG-T-ETP                  PIC 9(01).                
+          03 DATA-SISTEMA-T-ETP              PIC 9(08).                
+          03 HORA-SISTEMA-T-ETP              PIC 9(06).                
+          03 QTDE-REGISTROS-T-ETP            PIC 9(09).                
+          03 FILLER                          PIC X(44).                
+                                                                      
+      01  WS-SQLCA.                                                    
+          03 WS-SQLCAID                    PIC X(08)      VALUE SPACES.
+          03 WS-SQLCABC                    PIC ---------9.             
+          03 WS-SQLERRML                   PIC ---------9.             
+          03 WS-SQLERRP                    PIC ---------9.             
+          03 WS-SQLERRMC                   PIC X(70)      VALUE SPACES.
+          03 WS-SQLERRD   OCCURS 6 TIMES   PIC S9(09).                 
+          03 WS-SQLWARN1                   PIC X          VALUE SPACES.
+          03 WS-SQLWARN2                   PIC X          VALUE SPACES.
+          03 WS-SQLWARN3                   PIC X          VALUE SPACES.
+          03 WS-SQLWARN4                   PIC X          VALUE SPACES.
+          03 WS-SQLWARN5                   PIC X          VALUE SPACES.
+          03 WS-SQLWARN6                   PIC X          VALUE SPACES.
+          03 WS-SQLWARN7                   PIC X          VALUE SPACES.
+          03 WS-SQLEXT                     PIC X(08)      VALUE SPACES.
+                                                                      
+          COPY 'NCOB1410'.                                             
+                                                                      
+      01  SQL-PARAMETROS.                                              
+          03  SQL-OPEN           PIC X(12)       VALUE 'OPEN'.         
+          03  SQL-SSID           PIC X(04)       VALUE 'DSN'.          
+          03  SQL-CLOSE          PIC X(12)       VALUE 'CLOSE'.        
+          03  SQL-SYNC           PIC X(04)       VALUE 'SYNC'.         
+          03  SQL-ABRT           PIC X(04)       VALUE 'ABRT'.         
+          03  SQL-PLAN           PIC X(08)       VALUE ' '.            
+          03  SQL-RCOD           PIC S9(9) COMP  VALUE +0.             
+          03  SQL-RESON          PIC X(04)       VALUE ' '.            
+          03  SQL-TRANSLATE      PIC X(12)       VALUE 'TRANSLATE'.    
+          03  SQL-CONNECT        PIC X(12)       VALUE 'CONNECT'.      
+          03  SQL-DISCONNECT     PIC X(12)       VALUE 'DISCONNECT'.   
+          03  SQL-TECB-DB2       PIC S9(9) COMP  VALUE +0.             
+          03  SQL-SECB-DB2       PIC S9(9) COMP  VALUE +0.             
+          03  SQL-RIBT-DB2       PIC S9(9) COMP  VALUE +0.             
+                                                                       
+                                                                       
+                                                                       
+          EXEC SQL                                                     
+               INCLUDE SQLCA                                           
+          END-EXEC.                                                    
+                                                                       
+          EXEC SQL                                                     
+               INCLUDE SSCF3039                                        
+          END-EXEC.                                                    
+          EXEC SQL DECLARE ATSAUDAO.SSCESTIPULANTE TABLE
+          ( ETP_CIA                        SMALLINT NOT NULL,
+            ETP_APOLICE                    INTEGER NOT NULL,
+            ETP_DT_INICIO                  DECIMAL(7, 0) NOT NULL,
+            ETP_RSOCIAL                    CHAR(35) NOT NULL,
+            ETP_ENDERECO                   CHAR(50) NOT NULL,
+            ETP_CEP                        INTEGER NOT NULL,
+            ETP_CIDADE                     CHAR(20) NOT NULL,
+            ETP_UF                         CHAR(2) NOT NULL,
+            ETP_CGC                        DECIMAL(15, 0) NOT NULL,
+            ETP_TP_APOLICE                 DECIMAL(1, 0) NOT NULL,
+            ETP_NSUBF                      SMALLINT NOT NULL,
+            ETP_ULT_CMPRV                  INTEGER NOT NULL,
+            ETP_GERA_CMPRV                 DECIMAL(1, 0) NOT NULL,
+            ETP_SITUACAO                   DECIMAL(1, 0) NOT NULL,
+            ETP_DATA_CANCEL                DECIMAL(7, 0) NOT NULL,
+            ETP_PREMIO_OTN                 DECIMAL(1, 0) NOT NULL,
+            ETP_COBRANCA_OTN               DECIMAL(1, 0) NOT NULL,
+            ETP_CALC_SIN_ADM               DECIMAL(1, 0) NOT NULL,
+            ETP_RSOCIAL_CARD               DECIMAL(1, 0) NOT NULL,
+            ETP_COBRANCA_ANT               DECIMAL(1, 0) NOT NULL,
+            ETP_DT_RENOVACAO               DECIMAL(7, 0) NOT NULL,
+            ETP_DT_INICIO_DIC              DECIMAL(7, 0) NOT NULL,
+            ETP_CODIGO_ATIV                SMALLINT NOT NULL,
+            ETP_DT_INI                     DECIMAL(8, 0) NOT NULL,
+            ETP_DT_ACEITE                  DECIMAL(8, 0) NOT NULL,
+            ETP_CD_DISP                    DECIMAL(2, 0) NOT NULL,
+            ETP_CD_ORI                     CHAR(8) NOT NULL,
+            ETP_ID_RESP                    INTEGER NOT NULL,
+            ETP_CD_MOTIVOFIM               DECIMAL(2, 0) NOT NULL,
+            ETP_DIA_VENC_NSEG              DECIMAL(2, 0) NOT NULL,
+            ETP_RMO                        DECIMAL(3, 0) NOT NULL,
+            ETP_NOME_ABREV                 CHAR(21) NOT NULL,
+            ETP_SUC                        DECIMAL(3, 0) NOT NULL,
+            ETP_DIA_FAT                    DECIMAL(2, 0) NOT NULL,
+            ETP_PRAZO_RENOV                DECIMAL(1, 0) NOT NULL,
+            ETP_ORDENACAO                  DECIMAL(1, 0) NOT NULL,
+            ETP_TP_FATURA                  DECIMAL(1, 0) NOT NULL,
+            ETP_AAAAMM_FAT                 DECIMAL(6, 0) NOT NULL,
+            ETP_TERMINAL                   CHAR(8) NOT NULL,
+            ETP_EMIT_CERT                  DECIMAL(1, 0) NOT NULL,
+            ETP_GERA_FATURA                DECIMAL(1, 0) NOT NULL,
+            ETP_DCL_SAUDE                  DECIMAL(1, 0) NOT NULL,
+            ETP_POSCAD_MAGN                DECIMAL(1, 0) NOT NULL,
+            ETP_PERC_ADM                   DECIMAL(5, 2) NOT NULL,
+            ETP_PERC_DESC                  DECIMAL(5, 2) NOT NULL,
+            ETP_PERC_BONUS                 DECIMAL(5, 2) NOT NULL,
+            ETP_CARENCIAS                  SMALLINT NOT NULL,
+            ETP_NUMFAT                     SMALLINT NOT NULL,
+            ETP_QTDFUNCEXCL                SMALLINT NOT NULL,
+            ETP_MASSA                      SMALLINT NOT NULL,
+            ETP_CATEGORIA                  CHAR(1) NOT NULL,
+            ETP_TIPO_ADESAO                DECIMAL(1, 0) NOT NULL,
+            ETP_DTVENCGUIA                 INTEGER NOT NULL,
+            ETP_LIBERADO_FAT               DECIMAL(1, 0) NOT NULL,
+            ETP_APO_MESTRE                 INTEGER NOT NULL,
+            ETP_APO_CONJUGADA              INTEGER NOT NULL,
+            ETP_GERA_CARTAO                DECIMAL(1, 0) NOT NULL,
+            ETP_GERA_POSCAD                DECIMAL(1, 0) NOT NULL,
+            ETP_GERA_SINISTRO              DECIMAL(1, 0) NOT NULL,
+            ETP_PARTICIP_MAGN              DECIMAL(1, 0) NOT NULL,
+            ETP_SINISTRO_MAGN              DECIMAL(1, 0) NOT NULL,
+            ETP_GERA_PARTICIP              DECIMAL(1, 0) NOT NULL,
+            ETP_IN_DTLIMITE                DECIMAL(1, 0) NOT NULL,
+            ETP_IN_TXADM                   DECIMAL(1, 0) NOT NULL,
+            ETP_IN_PERCAPITA               DECIMAL(1, 0) NOT NULL,
+            ETP_CRITICA_DV                 DECIMAL(1, 0) NOT NULL,
+            ETP_AMD_INICIO                 INTEGER NOT NULL,
+            ETP_AMD_CANCEL                 INTEGER NOT NULL,
+            ETP_AMD_RENOVACAO              INTEGER NOT NULL,
+            ETP_AMD_INICIO_DIC             INTEGER NOT NULL,
+            ETP_IN_REMISSAO                SMALLINT NOT NULL,
+            ETP_NR_ANOS_REMIS              SMALLINT NOT NULL,
+            ETP_TP_REAVALIA                SMALLINT NOT NULL,
+            ETP_CRITMOV_MAGN               DECIMAL(1, 0) NOT NULL,
+            CSRAMO_ESTTE                   SMALLINT NOT NULL,
+            CDDD_ESTTE                     CHAR(6) NOT NULL,
+            CFONE_ESTTE                    DECIMAL(11, 0) NOT NULL,
+            CPRIM_RMAL_ESTTE               DECIMAL(8, 0) NOT NULL,
+            CSEGDA_DDD_ESTTE               DECIMAL(6, 0) NOT NULL,
+            CSEGDA_FONE_ESTTE              DECIMAL(11, 0) NOT NULL,
+            CSEGDA_RMAL_ESTTE              DECIMAL(8, 0) NOT NULL,
+            IBAIRO_ESTTE                   VARCHAR(25) NOT NULL,
+            REMAIL_ESTTE                   VARCHAR(256) NOT NULL,
+            CSIT_ACEIT_AGRDO               DECIMAL(1, 0) NOT NULL,
+            QMES_RENOV_CATAO               DECIMAL(3, 0) NOT NULL,
+            COPER_PLANO_SAUDE              DECIMAL(6, 0) NOT NULL
+               ) END-EXEC.
+           01  DCLSSCESTIPULANTE.
+               10 ETP-CIA              PIC S9(4) USAGE COMP.
+               10 ETP-APOLICE          PIC S9(9) USAGE COMP.
+               10 ETP-DT-INICIO        PIC S9(7)V USAGE COMP-3.
+               10 ETP-RSOCIAL          PIC X(35).
+               10 ETP-ENDERECO         PIC X(50).
+               10 ETP-CEP              PIC S9(9) USAGE COMP.
+               10 ETP-CIDADE           PIC X(20).
+               10 ETP-UF               PIC X(2).
+               10 ETP-CGC              PIC S9(15)V USAGE COMP-3.
+               10 ETP-TP-APOLICE       PIC S9(1)V USAGE COMP-3.
+               10 ETP-NSUBF            PIC S9(4) USAGE COMP.
+               10 ETP-ULT-CMPRV        PIC S9(9) USAGE COMP.
+               10 ETP-GERA-CMPRV       PIC S9(1)V USAGE COMP-3.
+               10 ETP-SITUACAO         PIC S9(1)V USAGE COMP-3.
+               10 ETP-DATA-CANCEL      PIC S9(7)V USAGE COMP-3.
+               10 ETP-PREMIO-OTN       PIC S9(1)V USAGE COMP-3.
+               10 ETP-COBRANCA-OTN     PIC S9(1)V USAGE COMP-3.
+               10 ETP-CALC-SIN-ADM     PIC S9(1)V USAGE COMP-3.
+               10 ETP-RSOCIAL-CARD     PIC S9(1)V USAGE COMP-3.
+               10 ETP-COBRANCA-ANT     PIC S9(1)V USAGE COMP-3.
+               10 ETP-DT-RENOVACAO     PIC S9(7)V USAGE COMP-3.
+               10 ETP-DT-INICIO-DIC    PIC S9(7)V USAGE COMP-3.
+               10 ETP-CODIGO-ATIV      PIC S9(4) USAGE COMP.
+               10 ETP-DT-INI           PIC S9(8)V USAGE COMP-3.
+               10 ETP-DT-ACEITE        PIC S9(8)V USAGE COMP-3.
+               10 ETP-CD-DISP          PIC S9(2)V USAGE COMP-3.
+               10 ETP-CD-ORI           PIC X(8).
+               10 ETP-ID-RESP          PIC S9(9) USAGE COMP.
+               10 ETP-CD-MOTIVOFIM     PIC S9(2)V USAGE COMP-3.
+               10 ETP-DIA-VENC-NSEG    PIC S9(2)V USAGE COMP-3.
+               10 ETP-RMO              PIC S9(3)V USAGE COMP-3.
+               10 ETP-NOME-ABREV       PIC X(21).
+               10 ETP-SUC              PIC S9(3)V USAGE COMP-3.
+               10 ETP-DIA-FAT          PIC S9(2)V USAGE COMP-3.
+               10 ETP-PRAZO-RENOV      PIC S9(1)V USAGE COMP-3.
+               10 ETP-ORDENACAO        PIC S9(1)V USAGE COMP-3.
+               10 ETP-TP-FATURA        PIC S9(1)V USAGE COMP-3.
+               10 ETP-AAAAMM-FAT       PIC S9(6)V USAGE COMP-3.
+               10 ETP-TERMINAL         PIC X(8).
+               10 ETP-EMIT-CERT        PIC S9(1)V USAGE COMP-3.
+               10 ETP-GERA-FATURA      PIC S9(1)V USAGE COMP-3.
+               10 ETP-DCL-SAUDE        PIC S9(1)V USAGE COMP-3.
+               10 ETP-POSCAD-MAGN      PIC S9(1)V USAGE COMP-3.
+               10 ETP-PERC-ADM         PIC S9(3)V9(2) USAGE COMP-3.
+               10 ETP-PERC-DESC        PIC S9(3)V9(2) USAGE COMP-3.
+               10 ETP-PERC-BONUS       PIC S9(3)V9(2) USAGE COMP-3.
+               10 ETP-CARENCIAS        PIC S9(4) USAGE COMP.
+               10 ETP-NUMFAT           PIC S9(4) USAGE COMP.
+               10 ETP-QTDFUNCEXCL      PIC S9(4) USAGE COMP.
+               10 ETP-MASSA            PIC S9(4) USAGE COMP.
+               10 ETP-CATEGORIA        PIC X(1).
+               10 ETP-TIPO-ADESAO      PIC S9(1)V USAGE COMP-3.
+               10 ETP-DTVENCGUIA       PIC S9(9) USAGE COMP.
+               10 ETP-LIBERADO-FAT     PIC S9(1)V USAGE COMP-3.
+               10 ETP-APO-MESTRE       PIC S9(9) USAGE COMP.
+               10 ETP-APO-CONJUGADA    PIC S9(9) USAGE COMP.
+               10 ETP-GERA-CARTAO      PIC S9(1)V USAGE COMP-3.
+               10 ETP-GERA-POSCAD      PIC S9(1)V USAGE COMP-3.
+               10 ETP-GERA-SINISTRO    PIC S9(1)V USAGE COMP-3.
+               10 ETP-PARTICIP-MAGN    PIC S9(1)V USAGE COMP-3.
+               10 ETP-SINISTRO-MAGN    PIC S9(1)V USAGE COMP-3.
+               10 ETP-GERA-PARTICIP    PIC S9(1)V USAGE COMP-3.
+               10 ETP-IN-DTLIMITE      PIC S9(1)V USAGE COMP-3.
+               10 ETP-IN-TXADM         PIC S9(1)V USAGE COMP-3.
+               10 ETP-IN-PERCAPITA     PIC S9(1)V USAGE COMP-3.
+               10 ETP-CRITICA-DV       PIC S9(1)V USAGE COMP-3.
+               10 ETP-AMD-INICIO       PIC S9(9) USAGE COMP.
+               10 ETP-AMD-CANCEL       PIC S9(9) USAGE COMP.
+               10 ETP-AMD-RENOVACAO    PIC S9(9) USAGE COMP.
+               10 ETP-AMD-INICIO-DIC   PIC S9(9) USAGE COMP.
+               10 ETP-IN-REMISSAO      PIC S9(4) USAGE COMP.
+               10 ETP-NR-ANOS-REMIS    PIC S9(4) USAGE COMP.
+               10 ETP-TP-REAVALIA      PIC S9(4) USAGE COMP.
+               10 ETP-CRITMOV-MAGN     PIC S9(1)V USAGE COMP-3.
+               10 CSRAMO-ESTTE         PIC S9(4) USAGE COMP.
+               10 CDDD-ESTTE           PIC X(6).
+               10 CFONE-ESTTE          PIC S9(11)V USAGE COMP-3.
+               10 CPRIM-RMAL-ESTTE     PIC S9(8)V USAGE COMP-3.
+               10 CSEGDA-DDD-ESTTE     PIC S9(6)V USAGE COMP-3.
+               10 CSEGDA-FONE-ESTTE    PIC S9(11)V USAGE COMP-3.
+               10 CSEGDA-RMAL-ESTTE    PIC S9(8)V USAGE COMP-3.
+               10 IBAIRO-ESTTE.
+                  49 IBAIRO-ESTTE-LEN
+                     PIC S9(4) USAGE COMP.
+                  49 IBAIRO-ESTTE-TEXT
+                     PIC X(25).
+               10 REMAIL-ESTTE.
+                  49 REMAIL-ESTTE-LEN
+                     PIC S9(4) USAGE COMP.
+                  49 REMAIL-ESTTE-TEXT
+                     PIC X(256).
+               10 CSIT-ACEIT-AGRDO     PIC S9(1)V USAGE COMP-3.
+               10 QMES-RENOV-CATAO     PIC S9(3)V USAGE COMP-3.
+               10 COPER-PLANO-SAUDE    PIC S9(6)V USAGE COMP-3.
+                                                                            
+               EXEC SQL                                                     
+                    INCLUDE SISA3011                                        
+               END-EXEC.                                                    
+               EXEC SQL DECLARE DBSISA.DESC TABLE
+               ( DESC_CD_ESTRUT                 DECIMAL(3, 0) NOT NULL,
+                 DESC_NM_CHAVE                  CHAR(20) NOT NULL,
+                 DESC_CD_CPO                    DECIMAL(4, 0) NOT NULL,
+                 DESC_NR_SUBCPO                 DECIMAL(1, 0) NOT NULL,
+                 DESC_NR_CPOTAM                 DECIMAL(2, 0) NOT NULL,
+                 DESC_NR_CPODEC                 DECIMAL(2, 0) NOT NULL,
+                 DESC_IN_CPOCLAS                CHAR(1) NOT NULL,
+                 DESC_NM_CPO                    CHAR(100) NOT NULL,
+                 DESC_DT_INI                    DECIMAL(8, 0) NOT NULL,
+                 DESC_DT_FIM                    DECIMAL(8, 0) NOT NULL,
+                 DESC_CD_MOTIVOFIM              DECIMAL(2, 0) NOT NULL,
+                 DESC_DT_ACEITE                 DECIMAL(8, 0) NOT NULL,
+                 DESC_CD_DISP                   DECIMAL(2, 0) NOT NULL,
+                 DESC_CD_ORI                    CHAR(8) NOT NULL,
+                 DESC_NM_CPO_ANT                CHAR(100) NOT NULL,
+                 DESC_ID_RESP                   INTEGER NOT NULL,
+                 DESC_CD_TERM                   CHAR(8) NOT NULL
+               ) END-EXEC.
+          
+           01  DCLDESC.
+               10 DESC-CD-ESTRUT       PIC S9(3)V USAGE COMP-3.
+               10 DESC-NM-CHAVE        PIC X(20).
+               10 DESC-CD-CPO          PIC S9(4)V USAGE COMP-3.
+               10 DESC-NR-SUBCPO       PIC S9(1)V USAGE COMP-3.
+               10 DESC-NR-CPOTAM       PIC S9(2)V USAGE COMP-3.
+               10 DESC-NR-CPODEC       PIC S9(2)V USAGE COMP-3.
+               10 DESC-IN-CPOCLAS      PIC X(1).
+               10 DESC-NM-CPO          PIC X(100).
+               10 DESC-DT-INI          PIC S9(8)V USAGE COMP-3.
+               10 DESC-DT-FIM          PIC S9(8)V USAGE COMP-3.
+               10 DESC-CD-MOTIVOFIM    PIC S9(2)V USAGE COMP-3.
+               10 DESC-DT-ACEITE       PIC S9(8)V USAGE COMP-3.
+               10 DESC-CD-DISP         PIC S9(2)V USAGE COMP-3.
+               10 DESC-CD-ORI          PIC X(8).
+               10 DESC-NM-CPO-ANT      PIC X(100).
+               10 DESC-ID-RESP         PIC S9(9) USAGE COMP.
+               10 DESC-CD-TERM         PIC X(8).
+          
+               EXEC SQL
+                    INCLUDE SISA3018
+               END-EXEC.
+          
+                                                                            
+          EXEC SQL DECLARE DBSISA.MOVI TABLE                           
+          ( MOVI_CD_MOV                    DECIMAL(3, 0) NOT NULL,     
+            MOVI_DT_CAD                    DECIMAL(8, 0) NOT NULL,     
+            MOVI_DT_ATU                    DECIMAL(8, 0) NOT NULL,     
+            MOVI_IN_SIT                    DECIMAL(1, 0) NOT NULL,     
+            MOVI_NM_CHAVE                  CHAR(40) NOT NULL,          
+            MOVI_NM_COMPL                  CHAR(150) NOT NULL,         
+            MOVI_TIMESTAMP                 TIMESTAMP NOT NULL,         
+            MOVI_NM_PROGRAMA               CHAR(8) NOT NULL            
+          ) END-EXEC.                                                  
+      01  DCLMOVI.                                                          
+          10 MOVI-CD-MOV          PIC S9(3)V USAGE COMP-3.                  
+          10 MOVI-DT-CAD          PIC S9(8)V USAGE COMP-3.                  
+          10 MOVI-DT-ATU          PIC S9(8)V USAGE COMP-3.                  
+          10 MOVI-IN-SIT          PIC S9(1)V USAGE COMP-3.                  
+          10 MOVI-NM-CHAVE        PIC X(40).                                
+          10 MOVI-NM-COMPL        PIC X(150).                               
+          10 MOVI-TIMESTAMP       PIC X(26).                                
+          10 MOVI-NM-PROGRAMA     PIC X(8).                                 
+          EXEC SQL DECLARE CURSOR-ATETP CURSOR FOR                          
+             SELECT ETP_CIA,                                                
+               ETP_APOLICE,                                              
+               ETP_RMO,                                                  
+               ETP_RSOCIAL,                                              
+               ETP_CGC,                                                  
+               ETP_CODIGO_ATIV,                                          
+               ETP_AMD_INICIO,                                           
+               ETP_AMD_CANCEL,                                           
+               ETP_DT_INI,                                               
+               COPER_PLANO_SAUDE                                         
+                                                                         
+         FROM  ATSAUDAO.SSCESTIPULANTE                                        
+                                                                              
+        WHERE (ETP_RMO       IN (875, 876, 878))                              
+          END-EXEC.                                                                
+      01  CB-CURRENT-DATE.                                                         
+          03  CB-MM           PIC X(2).                                            
+          03  FILLER          PIC X(1) VALUE '/'.                                  
+          03  CB-DD           PIC X(2).                                            
+          03  FILLER          PIC X(1) VALUE '/'.                                  
+          03  CB-YY           PIC X(2).                                            
+      01  CB-ACCEPT-DATE.                                                          
+          03  CB-YY           PIC X(2).                                            
+          03  CB-MM           PIC X(2).                                            
+          03  CB-DD           PIC X(2).                                            
+      01  CB-ACCEPT-TIME.                                                          
+          03  CB-TIME-OF-DAY  PIC X(6).                                            
+          03  FILLER          PIC X(2).                                            
+                                                                                   
+      LINKAGE SECTION.                                                             
+                                                                                   
+      01  PARAMETRO.                                                               
+          03 FILLER                      PIC X(02).                                
+          03 PERIODICIDADE               PIC X(01).                                
+          03 FILLER                      PIC X(01).                                
+          03 AMBIENTE                    PIC X(01).                                
+          03 FILLER                      PIC X(01).                                
+          03 DIRETORIO-PRODUCAO          PIC X(09).                                
+          03 FILLER                      PIC X(01).                                
+          03 DIRETORIO-DESENVOLVIMENTO   PIC X(09).                                
+                                                                                   
+      PROCEDURE DIVISION USING PARAMETRO.                                          
+      000-INICIO.                                                                  
+                                                                                   
+          PERFORM 100-INICIALIZACAO                                                
+             THRU 100-FIM.                                                         
+                                                                                   
+          PERFORM 200-PROCESSAMENTO                                    
+             THRU 200-FIM.                                             
+                                                                       
+     PERFORM 500-FINALIZACAO                                      
+        THRU 500-FIM.                                             
+                                                                  
+     STOP RUN.                                                    
+                                                                  
+                                                  
+      100-INICIALIZACAO.                                               
+                                                  
+                                                                       
+          ACCEPT CB-ACCEPT-DATE FROM DATE                              
+          MOVE CORR CB-ACCEPT-DATE TO CB-CURRENT-DATE                  
+          MOVE CB-CURRENT-DATE TO WS-DATA-CORRENTE.                    
+          MOVE '/'            TO WS-BR1-DISPLAY WS-BR2-DISPLAY.        
+          MOVE '20'           TO WS-SEC-DISPLAY.                       
+          MOVE WS-MES-CORR    TO WS-MES-DISPLAY.                       
+          MOVE WS-DIA-CORR    TO WS-DIA-DISPLAY.                       
+          MOVE WS-ANO-CORR    TO WS-ANO-DISPLAY.                       
+          ACCEPT CB-ACCEPT-TIME FROM TIME                              
+          MOVE CB-TIME-OF-DAY TO WS-HORA-CORRENTE.                     
+          MOVE ':'            TO WS-BR3-DISPLY WS-BR4-DISPLY.          
+          MOVE WS-HH-CORR     TO WS-HH-DISPLY.                         
+          MOVE WS-MM-CORR     TO WS-MM-DISPLY.                         
+          MOVE WS-SS-CORR     TO WS-SS-DISPLY.                         
+                                                                       
+          MOVE 'DWSD0612' TO SQL-PLAN                                  
+          CALL 'DSNALI' USING SQL-OPEN SQL-SSID SQL-PLAN.              
+                                                                       
+          OPEN INPUT  ARQPARM                                          
+          OPEN OUTPUT DIMESTIP.                                        
+                                                                       
+          PERFORM 101-GERA-HEADER-ETP                                  
+             THRU 101-FIM.                                             
+                                                                       
+      100-FIM.    EXIT.                                                
+                                                                       
+                                                                       
+                                         
+      101-GERA-HEADER-ETP.                                             
+                                              
+                                                                       
+          MOVE SPACES           TO  REG-HEADER-ETP.                    
+          MOVE 0                TO  TIPO-REG-H-ETP.                    
+                                                                       
+          MOVE '20'             TO  WS-SEC-SIST.                       
+          MOVE WS-ANO-CORR      TO  WS-ANO-SIST.                       
+          MOVE WS-MES-CORR      TO  WS-MES-SIST.                       
+          MOVE WS-DIA-CORR      TO  WS-DIA-SIST.                       
+          MOVE WS-DATA-SIST-R   TO  DATA-SISTEMA-H-ETP.                
+                                                                       
+          ACCEPT CB-ACCEPT-TIME FROM TIME                              
+          MOVE CB-TIME-OF-DAY TO HORA-SISTEMA-H-ETP.                   
+                                                                       
+          READ ARQPARM INTO REGISTRO-PARAMETRO                         
+             AT END                                                    
+             DISPLAY '*----------------------------------------------*'
+             DISPLAY '*    DWSD0612 - ARQUIVO DE PARAMETROS VAZIO    *'
+             DISPLAY '*----------------------------------------------*'
+             CALL NCOB1660 USING WS-ABEND.                             
+                                                                       
+          IF PERIODICIDADE = 'D'                                       
+             IF DATA-PROC NOT EQUAL DATA-PROX                          
+                DISPLAY ' '                                            
+                DISPLAY 'DWSD0612 - PARAMETRO INVALIDO '               
+                DISPLAY 'DATA DO PROCESSAMENTO.. ' DATA-PROC           
+                DISPLAY 'DATA DO PROXIMO........ ' DATA-PROX           
+                DISPLAY ' '                                            
+                CALL  NCOB1660  USING WS-ABEND                         
+             END-IF                                                    
+          ELSE                                                         
+             DISPLAY ' '                                               
+             DISPLAY 'DWSD0612-PERIODICIDADE INVALIDA=' PERIODICIDADE  
+             DISPLAY ' '                                               
+             CALL  NCOB1660  USING WS-ABEND                            
+          END-IF.                                                      
+                                                                       
+          DISPLAY ' '.                                                 
+          DISPLAY 'DWSD0612 - REGISTRO PARAMETRO : '.                  
+          DISPLAY  REGISTRO-PARAMETRO.                                 
+                                                                       
+          MOVE DATA-CORTE       TO DATA-INI-SEL.                       
+          MOVE DATA-FIM         TO DATA-FIM-SEL.                       
+                                                                       
+          CLOSE ARQPARM.                                               
+                                                                       
+                                     
+                                                                       
+          OPEN OUTPUT ARQFTP.                                          
+                                                                       
+          IF AMBIENTE = 'P'                                            
+             MOVE DIRETORIO-PRODUCAO         TO DIRETORIO              
+          ELSE                                                         
+             MOVE DIRETORIO-DESENVOLVIMENTO  TO DIRETORIO              
+          END-IF.                                                      
+                                                                       
+          MOVE  DATA-INI  TO   LN-DATA.                                
+                                                                       
+          PERFORM 102-GRAVA-FTP-ESTIP.                                 
+                                                                       
+          MOVE 'DWSD0612'     TO  NOME-PGM-H-ETP.                      
+          MOVE  DATA-INI      TO  DATA-INI-H-ETP                       
+                                  DATA-FIM-H-ETP.                      
+                                                                       
+          WRITE REG-ESTIPULANTE FROM                                   
+                REG-HEADER-ETP.                                        
+                                                                       
+           101-FIM. EXIT.                                                   
+                                                                            
+                                                                            
+           102-GRAVA-FTP-ESTIP.                                             
+                                                                            
+               DISPLAY ' '                                                  
+               DISPLAY 'ARQ FTP ESTIP   '.                                  
+               WRITE FTP-REGISTRO  FROM LN-FTP-01.                          
+          DISPLAY LN-FTP-01.                                           
+          WRITE FTP-REGISTRO  FROM LN-FTP-02.                          
+          DISPLAY LN-FTP-02.                                           
+          WRITE FTP-REGISTRO  FROM LN-FTP-03.                          
+          DISPLAY LN-FTP-03.                                           
+          WRITE FTP-REGISTRO  FROM LN-FTP-04.                          
+          DISPLAY LN-FTP-04.                                           
+          WRITE FTP-REGISTRO  FROM LN-FTP-05.                          
+          DISPLAY LN-FTP-05.                                           
+          WRITE FTP-REGISTRO  FROM LN-FTP-06.                          
+          DISPLAY LN-FTP-06.                                           
+          WRITE FTP-REGISTRO  FROM LN-FTP-07.                          
+          DISPLAY LN-FTP-07.                                           
+          WRITE FTP-REGISTRO  FROM LN-FTP-08.                          
+          DISPLAY LN-FTP-08.                                           
+                                                                       
+          CLOSE ARQFTP.                                                
+                                                                       
+                                                                       
+                                                                       
+                                               
+      200-PROCESSAMENTO.                                               
+                                                   
+                                                                       
+          SORT ARQSORT ON ASCENDING  KEY NUM-CGC-SORT                  
+                                         DATA-CANCEL-SORT              
+                          DESCENDING KEY DATA-INIC-SORT                
+                                         COD-CIA-SORT                  
+                     COD-APOLICE-SORT                             
+                                                                  
+          INPUT   PROCEDURE 300-PROCESSA-CURSOR THRU 300-FIM      
+                                                                  
+          OUTPUT  PROCEDURE 400-PROCESSA-SORT   THRU 400-FIM.     
+                                                                  
+                                                                  
+      200-FIM. EXIT.                                                   
+                                                                       
+                                      
+      300-PROCESSA-CURSOR.                                             
+                                       
+                                                                       
+          PERFORM 310-ABRE-CURSOR-ATSAUDAO                             
+             THRU 310-FIM.                                             
+                                                                       
+          PERFORM 320-LE-CURSOR-ATSAUDAO                               
+             THRU 320-FIM.                                             
+                                                                       
+          IF SQLCODE NOT EQUAL 0 AND 100                               
+             DISPLAY '*----------------------------------------------*'
+             DISPLAY '* DWSD0612 300-PROCESSA-CURSOR                 *'
+             DISPLAY '* DWSD0612 ERRO PRIMEIRA LEITURA CURSOR-ATETP  *'
+             DISPLAY '* DWSD0612 ATSAUDAO.SSCESTIPULANTE             *'
+             DISPLAY '*----------------------------------------------*'
+             DISPLAY '* SQLCODE  = ' WS-SQLCODE                        
+             DISPLAY '*----------------------------------------------*'
+             MOVE 'ERRO NA LEITURA CURSOR-ATETP'  TO   WS-COMANDO      
+             PERFORM 9999-TRATA-ERRO-SQL       THRU 9999-FIM.          
+                                                                       
+          PERFORM 330-PROCESSA-ATSAUDAO                                
+             THRU 330-FIM                                              
+            UNTIL SQLCODE  EQUAL 100.                                  
+                                                                       
+                                                                       
+      300-FIM. EXIT.                                                   
+                                                                       
+                                      
+      310-ABRE-CURSOR-ATSAUDAO.                                        
+                                   
+                                                                       
+          EXEC SQL                                                     
+               OPEN CURSOR-ATETP                                       
+     END-EXEC.                                                    
+                                                                  
+     MOVE SQLCODE  TO  WS-SQLCODE.                                
+                                                                  
+     IF SQLCODE NOT EQUAL 0                                       
+        DISPLAY '*-------------------------------------------*'   
+        DISPLAY '*  DWSD0612 - 310-ABRE-CURSOR-ATSAUDAO      *'   
+        DISPLAY '*  DWSD0612 - ERRO NA ABERTURA CURSOR-ATETP *'   
+        DISPLAY '*  DWSD0612 - ATSAUDAO.SSCESTIPULANTE       *'   
+        DISPLAY '*-------------------------------------------*'   
+        DISPLAY '* SQLCODE  = ' WS-SQLCODE                        
+        DISPLAY '*-------------------------------------------*'   
+        MOVE 'ERRO NO OPEN DO CURSOR-ATETP'  TO   WS-COMANDO      
+        PERFORM 9999-TRATA-ERRO-SQL       THRU 9999-FIM.          
+                                                                  
+      310-FIM.    EXIT.                                                
+                                                                       
+                                 
+      320-LE-CURSOR-ATSAUDAO.                                          
+                               
+                                                                       
+          EXEC SQL  FETCH CURSOR-ATETP                                 
+                                                                       
+              INTO :DCLSSCESTIPULANTE.ETP-CIA,                         
+                   :DCLSSCESTIPULANTE.ETP-APOLICE,                     
+                   :DCLSSCESTIPULANTE.ETP-RMO,                         
+                   :DCLSSCESTIPULANTE.ETP-RSOCIAL,                     
+                   :DCLSSCESTIPULANTE.ETP-CGC,                         
+                   :DCLSSCESTIPULANTE.ETP-CODIGO-ATIV,                 
+                   :DCLSSCESTIPULANTE.ETP-AMD-INICIO,                  
+                   :DCLSSCESTIPULANTE.ETP-AMD-CANCEL,                  
+                   :DCLSSCESTIPULANTE.ETP-DT-INI,                      
+                   :DCLSSCESTIPULANTE.COPER-PLANO-SAUDE                
+                                                                       
+          END-EXEC.                                                    
+                                                                       
+          MOVE SQLCODE       TO WS-SQLCODE.                            
+                                                                       
+          IF SQLCODE EQUAL 0                                           
+             ADD  1          TO WS-LIDOS-CURSOR-ATETP                  
+             PERFORM 320A-MOVE-CAMPOS-ATSAUDAO-ETP                     
+                THRU 320A-FIM                                          
+          ELSE                                                         
+          IF SQLCODE NOT EQUAL 100                                     
+             DISPLAY '*------------------------------------------*'    
+             DISPLAY '* DWSD0612 320-LE-CURSOR-ATSAUDAO          *'    
+             DISPLAY '* DWSD0612 ERRO NA LEITURA CURSOR-ATETP    *'    
+             DISPLAY '* DWSD0612 ATSAUDAO.SSCESTIPULANTE         *'    
+             DISPLAY '*------------------------------------------*'    
+             DISPLAY '* SQLCODE     = ' WS-SQLCODE                     
+             DISPLAY '* ETP-CIA     = ' WS-CIA-ATSAUDAO                
+        DISPLAY '* ETP-APOLICE = ' WS-APOLICE-ATSAUDAO            
+        DISPLAY '*------------------------------------------*'    
+        MOVE 'ERRO NA LEITURA DO CURSOR-ATETP' TO  WS-COMANDO     
+        PERFORM 9999-TRATA-ERRO-SQL          THRU 9999-FIM.       
+                                                                       
+      320-FIM.   EXIT.                                                 
+                                                                       
+                                
+      320A-MOVE-CAMPOS-ATSAUDAO-ETP.                                   
+                           
+          MOVE ETP-CIA         OF DCLSSCESTIPULANTE TO                 
+               WS-CIA-ATSAUDAO.                                        
+                                                                       
+          MOVE ETP-APOLICE     OF DCLSSCESTIPULANTE TO                 
+               WS-APOLICE-ATSAUDAO.                                    
+                                                                       
+          MOVE ETP-RMO         OF DCLSSCESTIPULANTE TO                 
+               WS-RMO-ATSAUDAO.                                        
+                                                                       
+          MOVE ETP-RSOCIAL     OF DCLSSCESTIPULANTE TO                 
+               WS-RSOCIAL-ATSAUDAO.                                    
+                                                                       
+          MOVE ETP-CGC         OF DCLSSCESTIPULANTE TO                 
+               WS-CGC-ATSAUDAO                                         
+                                                                       
+          MOVE ETP-CODIGO-ATIV OF DCLSSCESTIPULANTE TO                 
+               WS-CODIGO-ATIV-ATSAUDAO.                                
+                                                                       
+          MOVE ETP-AMD-INICIO  OF DCLSSCESTIPULANTE TO                 
+               WS-AMD-INICIO-ATSAUDAO.                                 
+                                                                       
+      320A-FIM.   EXIT.                                                
+                                                                       
+                                    
+      330-PROCESSA-ATSAUDAO.                                           
+                                     
+                                                                       
+          MOVE ZEROS TO DESC-DT-INI.                                   
+                                                                       
+          IF ETP-AMD-CANCEL NOT EQUAL ZEROS                            
+        PERFORM 330A-ACESSA-DESC                                  
+           THRU 330A-FIM.                                         
+                                                                  
+     IF (ETP-AMD-CANCEL  = 0                      OR              
+         ETP-AMD-CANCEL NOT LESS    DATA-INI-SEL) AND             
+        (ETP-DT-INI     NOT GREATER DATA-FIM-SEL)                 
+         PERFORM 330B-TRATA-ATSAUDAO                              
+            THRU 330B-FIM                                         
+     ELSE                                                         
+        IF (ETP-AMD-CANCEL  < DATA-INI-SEL)         AND           
+           (ETP-DT-INI   NOT GREATER DATA-FIM-SEL)  AND           
+           (DESC-DT-INI  NOT LESS    DATA-INI-SEL   AND           
+            DESC-DT-INI  NOT GREATER DATA-FIM-SEL)                
+            PERFORM 330B-TRATA-ATSAUDAO                           
+               THRU 330B-FIM                                      
+        ELSE                                                      
+           PERFORM 320-LE-CURSOR-ATSAUDAO                         
+              THRU 320-FIM.                                       
+                                                                       
+      330-FIM. EXIT.                                                   
+                                                                       
+                                          
+      330A-ACESSA-DESC.                                                
+                                          
+     
+          PERFORM 330C-ACESSA-DATA-CORTE                               
+     
+          IF DATA-PROC >= WS-AAAAMMDD-CORTE-REAV
+             MOVE ETP-CIA             OF  DCLSSCESTIPULANTE
+                                      TO  WS-DESC-NM-CHAVE-CIA-7
+             MOVE ETP-APOLICE         OF  DCLSSCESTIPULANTE
+                                      TO  WS-DESC-NM-CHAVE-APO-7
+             MOVE WS-DESC-NM-CHAVE-7  TO  DESC-NM-CHAVE                
+          ELSE
+             MOVE ETP-CIA             OF  DCLSSCESTIPULANTE            
+                                      TO  WS-DESC-NM-CHAVE-CIA         
+             MOVE ETP-APOLICE         OF  DCLSSCESTIPULANTE            
+                                      TO  WS-DESC-NM-CHAVE-APO         
+             MOVE WS-DESC-NM-CHAVE    TO  DESC-NM-CHAVE                
+          END-IF.                                                      
+     
+          MOVE 1                      TO  DESC-CD-ESTRUT.              
+          MOVE 68                     TO  DESC-CD-CPO.                 
+          MOVE 0                      TO  DESC-NR-SUBCPO.              
+          MOVE 99999999               TO  DESC-DT-FIM.                 
+                                                                       
+          EXEC SQL                                                     
+                                                                       
+               SELECT  DESC_DT_INI                                     
+                                                                       
+                 INTO :DESC-DT-INI                                     
+                                                                       
+                 FROM  DBSISA.DESC                                     
+                                                                       
+           WHERE  DESC_CD_ESTRUT   = :DESC-CD-ESTRUT              
+             AND  DESC_CD_CPO      = :DESC-CD-CPO                 
+             AND  DESC_NR_SUBCPO   = :DESC-NR-SUBCPO              
+             AND  DESC_DT_FIM      = :DESC-DT-FIM                 
+             AND  DESC_NM_CHAVE    = :DESC-NM-CHAVE               
+                                                                  
+      END-EXEC.                                                    
+                                                                  
+      MOVE SQLCODE   TO  WS-SQLCODE.                               
+                                                                  
+      IF SQLCODE EQUAL 100                                         
+        MOVE ZEROS  TO  DESC-DT-INI                               
+      ELSE                                                         
+        IF SQLCODE EQUAL 0                                        
+           NEXT SENTENCE                                          
+        ELSE                                                      
+           IF SQLCODE NOT EQUAL ZEROS                             
+              DISPLAY '*----------------------------------------*'
+              DISPLAY '* DWSD0612 - 330A-ACESSA-DESC            *'
+              DISPLAY '* DWSD0612 - ERRO NA LEITURA DA TABELA   *'
+              DISPLAY '* DWSD0612 - DBSISA.DESC                 *'
+              DISPLAY '*----------------------------------------*'
+              DISPLAY '* SQLCODE         = ' WS-SQLCODE           
+              DISPLAY '* DESC-CD-ESTRUT  = ' DESC-CD-ESTRUT       
+              DISPLAY '* DESC-CD-CPO     = ' DESC-CD-CPO          
+              DISPLAY '* DESC-NR-SUBCPO  = ' DESC-NR-SUBCPO       
+              DISPLAY '* DESC-DT-FIM     = ' DESC-DT-FIM          
+              DISPLAY '* DESC-NM-CHAVE   = ' DESC-NM-CHAVE        
+              DISPLAY '*----------------------------------------*'
+              MOVE 'ERRO NA LEITURA DA TABELA DESC' TO WS-COMANDO 
+              PERFORM 9999-TRATA-ERRO-SQL  THRU 9999-FIM.         
+                                                                       
+      330A-FIM. EXIT.                                                  
+                                                                       
+                                        
+      330B-TRATA-ATSAUDAO.                                             
+                                       
+                                                                       
+          PERFORM 331-GRAVA-SORT-ATSAUDAO                              
+             THRU 331-FIM.                                             
+                                                                       
+          PERFORM 320-LE-CURSOR-ATSAUDAO                               
+             THRU 320-FIM.                                             
+                                                                       
+      330B-FIM. EXIT.                                                  
+                                                                       
+                                       
+      330C-ACESSA-DATA-CORTE.                                          
+                                        
+                                                                       
+          EXEC SQL                                                     
+               SELECT MOVI_NM_COMPL                                    
+                 INTO :MOVI-NM-COMPL                                   
+               FROM DBSISA.MOVI                                        
+               WHERE  MOVI_CD_MOV = 80                                 
+                 AND  MOVI_NM_CHAVE LIKE '0510%'                       
+                 FETCH FIRST 1 ROW ONLY                                
+          END-EXEC                                                     
+     
+          IF SQLCODE             EQUAL ZEROS                           
+             MOVE MOVI-NM-COMPL  TO WS-MOVI-NM-COMPL-REAV              
+          ELSE                                                         
+             DISPLAY '*----------------------------------------*'      
+             DISPLAY '* DWSD0612 - 330CACESSA-DATA-CORTE       *'      
+             DISPLAY '* DWSD0612 - ERRO NA LEITURA DBSISA-MOVI *'      
+             DISPLAY '*----------------------------------------*'      
+             DISPLAY '* SQLCODE        = ' SQLCODE                     
+        DISPLAY '*----------------------------------------*'      
+        MOVE 'ERRO SELECT TABELA DBSISA.MOVI' TO WS-COMANDO       
+        GO TO  9999-TRATA-ERRO-SQL.                               
+                                                                  
+      330C-FIM. EXIT.                                                  
+                                                                       
+                                   
+      331-GRAVA-SORT-ATSAUDAO.                                         
+                                      
+                                                                       
+          MOVE  SPACES                  TO REG-ARQSORT.                
+                                                                       
+          MOVE  WS-CGC-ATSAUDAO         TO WS-CGC-INTEIRO.             
+          MOVE  WS-CGC-SDV              TO NUM-CGC-SORT.               
+          MOVE  WS-CGC-DV               TO NUM-DV-CGC-SORT.            
+                                                                       
+          MOVE  WS-AMD-INICIO-ATSAUDAO  TO DATA-INIC-SORT.             
+          MOVE  ETP-AMD-CANCEL          TO DATA-CANCEL-SORT.           
+          MOVE  WS-CIA-ATSAUDAO         TO COD-CIA-SORT.               
+          MOVE  WS-APOLICE-ATSAUDAO     TO COD-APOLICE-SORT.           
+          MOVE  WS-RSOCIAL-ATSAUDAO     TO NOME-ESTIP-SORT.            
+          MOVE  WS-CODIGO-ATIV-ATSAUDAO TO COD-ATIV-SORT.              
+                                                                       
+          RELEASE REG-ARQSORT.                                         
+          ADD   1                       TO WS-GRAVADOS-SORT.           
+                                                                       
+      331-FIM. EXIT.                                                   
+                                                                       
+                                                                       
+                                        
+      400-PROCESSA-SORT.                                               
+                                       
+                                                                       
+          PERFORM 440-LE-ARQSORT                                       
+             THRU 440-FIM.                                             
+                                                                       
+          PERFORM 410-TRATA-ARQSORT                                    
+             THRU 410-FIM                                              
+            UNTIL WS-FIM-SORT EQUAL 'SIM'.                             
+                                                                       
+      400-FIM. EXIT.                                                   
+                                                                       
+                                   
+      410-TRATA-ARQSORT.                                               
+                                       
+                                                                       
+          IF NUM-CGC-SORT = 0                                          
+             PERFORM 425-TRATA-CGC-ZERADO                              
+                THRU 425-FIM                                           
+               UNTIL NUM-CGC-SORT NOT EQUAL WS-CGC-ANT.                
+                                                                       
+          MOVE COD-CIA-SORT     TO WS-COD-CIA-ANT                      
+          MOVE COD-APOLICE-SORT TO WS-COD-APOL-ANT                     
+          MOVE DATA-INIC-SORT   TO WS-DATA-INIC-ANT                    
+          MOVE NUM-DV-CGC-SORT  TO WS-DV-CGC-ANT                       
+          MOVE NOME-ESTIP-SORT  TO WS-NOME-ESTIP-ANT                   
+          MOVE COD-ATIV-SORT    TO WS-COD-ATIV-ANT                     
+          MOVE NUM-CGC-SORT     TO WS-CGC-ANT                          
+                                                                       
+          IF DATA-CANCEL-SORT = 0
+             PERFORM 430-GRAVA-ESTIPULANTE                             
+                THRU 430-FIM                                           
+             PERFORM 440-LE-ARQSORT THRU 440-FIM                       
+               UNTIL WS-FIM-SORT      EQUAL 'SIM'
+                  OR NUM-CGC-SORT NOT EQUAL WS-CGC-ANT
+          ELSE
+             MOVE ZEROS   TO WS-DATA-INIC-ANT                          
+             PERFORM 420-TRATA-ESTIPULANTE-IGUAL THRU 420-FIM          
+               UNTIL WS-FIM-SORT      EQUAL 'SIM'                      
+                  OR NUM-CGC-SORT NOT EQUAL WS-CGC-ANT                 
+             PERFORM 430-GRAVA-ESTIPULANTE                             
+                THRU 430-FIM                                           
+          END-IF.                                                      
+                                                                       
+      410-FIM. EXIT.                                                   
+                                                                       
+                                 
+      420-TRATA-ESTIPULANTE-IGUAL.                                     
+                                         
+                                                                       
+          IF DATA-INIC-SORT > WS-DATA-INIC-ANT
+             MOVE COD-CIA-SORT     TO WS-COD-CIA-ANT                   
+             MOVE COD-APOLICE-SORT TO WS-COD-APOL-ANT                  
+             MOVE DATA-INIC-SORT   TO WS-DATA-INIC-ANT                 
+             MOVE NUM-DV-CGC-SORT  TO WS-DV-CGC-ANT                    
+             MOVE NOME-ESTIP-SORT  TO WS-NOME-ESTIP-ANT                
+             MOVE COD-ATIV-SORT    TO WS-COD-ATIV-ANT                  
+             MOVE NUM-CGC-SORT     TO WS-CGC-ANT                       
+          END-IF.
+                                                                       
+          PERFORM 440-LE-ARQSORT                                       
+             THRU 440-FIM.                                             
+                                                                       
+      420-FIM. EXIT.                                                   
+                                                                       
+                                       
+      425-TRATA-CGC-ZERADO.                                            
+                                        
+                                                                       
+          ADD  1                TO WS-CONT-CGC-ZERADOS.                
+                                                                       
+          MOVE COD-CIA-SORT     TO WS-COD-CIA-ANT.                     
+          MOVE COD-APOLICE-SORT TO WS-COD-APOL-ANT.                    
+          MOVE DATA-INIC-SORT   TO WS-DATA-INIC-ANT.                   
+          MOVE NUM-DV-CGC-SORT  TO WS-DV-CGC-ANT.                      
+          MOVE NOME-ESTIP-SORT  TO WS-NOME-ESTIP-ANT.                  
+          MOVE COD-ATIV-SORT    TO WS-COD-ATIV-ANT.                    
+          MOVE NUM-CGC-SORT     TO WS-CGC-ANT.                         
+                                                                       
+          PERFORM 430-GRAVA-ESTIPULANTE                                
+             THRU 430-FIM.                                             
+                                                                       
+          PERFORM 440-LE-ARQSORT                                       
+        THRU 440-FIM.                                             
+                                                                  
+      425-FIM. EXIT.                                                   
+                                                                       
+                                        
+      430-GRAVA-ESTIPULANTE.                                           
+                                       
+                                                                       
+          MOVE  1                   TO TIPO-REG-D-ETP.                 
+          MOVE  6                   TO COD-ORIGEM-D-ETP.               
+                                                                       
+          MOVE  WS-COD-CIA-ANT      TO WS-CIA.                         
+          MOVE  WS-COD-APOL-ANT     TO WS-APOLICE.                     
+     
+          MOVE WS-APOLICE           TO   ETP-APOLICE                   
+          PERFORM 450-ACESSA-ESTIPULANTE-NVCIA THRU 450-FIM            
+     
+          MOVE  WS-IDENT-APOL-R     TO IDENT-APOLICE-D-ETP.            
+                                                                       
+          MOVE  WS-NOME-ESTIP-ANT   TO NOME-ESTIPULANTE-D-ETP.         
+                                                                       
+          MOVE  WS-CGC-ANT          TO WS-CODIGO-CNPJ-R.               
+          MOVE  WS-COD-BASE         TO CODIGO-BASE-D-ETP.              
+          MOVE  WS-COD-FILIAL       TO CODIGO-FILIAL-D-ETP.            
+          MOVE  WS-DV-CGC-ANT       TO CODIGO-DV-D-ETP.                
+                                                                       
+          MOVE  WS-COD-ATIV-ANT     TO IDENT-RAMO-ATIV-D-ETP.          
+                                                                       
+          WRITE REG-ESTIPULANTE     FROM                               
+                REG-DETALHE-ETP.                                       
+                                                                       
+          ADD   1                   TO WS-QTDE-ETP                     
+                                       WS-GRAVADOS-ETP.                
+                                                                       
+      430-FIM. EXIT.                                                   
+                                                                       
+                                        
+      440-LE-ARQSORT.                                                  
+                                   
+                                                                  
+      RETURN ARQSORT                                               
+            AT END MOVE 'SIM' TO WS-FIM-SORT.                     
+                                                                  
+      IF WS-FIM-SORT NOT EQUAL 'SIM'                               
+        ADD  1 TO WS-LIDOS-SORT.                                  
+                                                                  
+      440-FIM. EXIT.                                                   
+                                                                       
+                                        
+      450-ACESSA-ESTIPULANTE-NVCIA.                                    
+                                       
+          EXEC  SQL
+                SELECT   COPER_PLANO_SAUDE
+                  INTO  :COPER-PLANO-SAUDE
+                  FROM   ATSAUDAO.SSCESTIPULANTE
+                 WHERE   ETP_APOLICE      = :ETP-APOLICE
+                 WITH UR
+          END-EXEC.
+     
+          IF SQLCODE NOT EQUAL 0 AND 100
+             DISPLAY '*---------------------------------------------*' 
+             DISPLAY '* DWSD0612 - 450-ACESSA-ESTIPULANTE-NVCIA     *' 
+             DISPLAY '* DWSD0612 - ERRO NO SELECT                   *' 
+             DISPLAY '* DWSD0612 - ATSAUDAO.SSCESTIPULANTE          *' 
+             DISPLAY '*---------------------------------------------*' 
+             DISPLAY '* SQLCODE     = ' WS-SQLCODE                     
+             DISPLAY '*--------------------------------------------*'  
+             MOVE 'ERRO NO ACESSO A TABELA ESTIPULANTE' TO WS-COMANDO  
+             PERFORM 9999-TRATA-ERRO-SQL              THRU 9999-FIM    
+          END-IF.
+     
+          IF COPER-PLANO-SAUDE NOT EQUAL 0
+             MOVE COPER-PLANO-SAUDE TO WS-CIA
+          END-IF.
+     
+      450-FIM.    EXIT.                                                
+     
+                                               
+      500-FINALIZACAO.                                                 
+                                                
+                                                                       
+          PERFORM 501-FECHA-CURSOR-ATSAUDAO                            
+        THRU 501-FIM.                                             
+                                                                  
+          PERFORM 503-GERA-TRAILLER-ETP                                
+             THRU 503-FIM.                                             
+                                                                       
+          CLOSE DIMESTIP.                                              
+                                                                       
+          MOVE WS-LIDOS-CURSOR-ATETP  TO  WS-LIDOS-ZZZ-ATETP.          
+          MOVE WS-LIDOS-CURSOR-DBETP  TO  WS-LIDOS-ZZZ-DBETP.          
+          MOVE WS-CONT-CGC-ZERADOS    TO  WS-CGC-ZERADOS-ZZZ.          
+                                                                       
+          DISPLAY '*-------------------------------------------*'      
+          DISPLAY '*            PROGRAMA DWSD0612              *'      
+          DISPLAY '*           EXTRACAO ESTIPULANTE            *'      
+          DISPLAY '*-------------------------------------------*'      
+          DISPLAY '* INICIO : ' WS-DATA-DISPLAY                        
+                  ' - ' WS-HORA-DISPLAY '            *'                
+          DISPLAY '*-------------------------------------------*'      
+          DISPLAY '*                                           *'      
+          DISPLAY '* LIDOS ATSAUDAO.SSCESTIPULANTE:'                   
+                  WS-LIDOS-ZZZ-ATETP ' *'                              
+          DISPLAY '*                                           *'      
+          DISPLAY '* LIDOS DBSAUDE.SAEESTIPULANTE :'                   
+                  WS-LIDOS-ZZZ-DBETP ' *'                              
+          DISPLAY '*                                           *'      
+          MOVE WS-GRAVADOS-SORT       TO  WS-GRAVA-ZZZ                 
+          DISPLAY '* GRAVADOS SORT                :'                   
+                  WS-GRAVA-ZZZ       ' *'                              
+          DISPLAY '*                                           *'      
+          MOVE WS-LIDOS-SORT          TO  WS-GRAVA-ZZZ                 
+          DISPLAY '* LIDOS    SORT                :'                   
+                  WS-GRAVA-ZZZ       ' *'                              
+          DISPLAY '*                                           *'      
+          MOVE WS-GRAVADOS-ETP        TO  WS-GRAVA-ZZZ                 
+          DISPLAY '* GRAVADOS ESTIPULANTE         :' WS-GRAVA-ZZZ      
+                  ' *'                                                 
+          DISPLAY '*                                           *'      
+          DISPLAY '* CGC ZERADOS                  :' WS-CGC-ZERADOS-ZZZ
+             ' *'                                                 
+          DISPLAY '*                                           *'      
+          DISPLAY '*-------------------------------------------*'      
+                                                                       
+          ACCEPT CB-ACCEPT-DATE FROM DATE                              
+          MOVE CORR CB-ACCEPT-DATE TO CB-CURRENT-DATE                  
+          MOVE CB-CURRENT-DATE TO WS-DATA-CORRENTE.                    
+          MOVE '/'            TO WS-BR1-DISPLAY WS-BR2-DISPLAY.        
+          MOVE '20'           TO WS-SEC-DISPLAY.                       
+          MOVE WS-MES-CORR    TO WS-MES-DISPLAY.                       
+          MOVE WS-DIA-CORR    TO WS-DIA-DISPLAY.                       
+          MOVE WS-ANO-CORR    TO WS-ANO-DISPLAY.                       
+          ACCEPT CB-ACCEPT-TIME FROM TIME                              
+          MOVE CB-TIME-OF-DAY TO WS-HORA-CORRENTE.                     
+          MOVE ':'            TO WS-BR3-DISPLY WS-BR4-DISPLY.          
+          MOVE WS-HH-CORR     TO WS-HH-DISPLY.                         
+          MOVE WS-MM-CORR     TO WS-MM-DISPLY.                         
+          MOVE WS-SS-CORR     TO WS-SS-DISPLY.                         
+                                                                       
+          DISPLAY '* FINAL  : ' WS-DATA-DISPLAY                        
+             ' - ' WS-HORA-DISPLAY '            *'                     
+          DISPLAY '*-------------------------------------------*'.     
+                                                                       
+           500-FIM. EXIT.                                                   
+                                                                            
+                                             
+           501-FECHA-CURSOR-ATSAUDAO.                                       
+                                              
+                                                                            
+               EXEC SQL                                                     
+                    CLOSE CURSOR-ATETP                                      
+               END-EXEC.                                                    
+                                                                            
+               MOVE SQLCODE  TO  WS-SQLCODE.                                
+                                                                            
+               IF SQLCODE NOT EQUAL ZEROS                                   
+                  DISPLAY '*--------------------------------------------*'  
+             DISPLAY '* DWSD0612 - 501-FECHA-CURSOR-ATSAUDAO       *'  
+             DISPLAY '* DWSD0612 - ERRO NO FECHAMENTO CURSOR-ATETP *'  
+             DISPLAY '* DWSD0612 - ATSAUDAO.SSCESTIPULANTE         *'  
+             DISPLAY '*--------------------------------------------*'  
+             DISPLAY '* SQLCODE     = ' WS-SQLCODE                     
+             DISPLAY '*--------------------------------------------*'  
+             MOVE 'ERRO NO FECHAMENTO DO CURSOR-ATETP' TO WS-COMANDO   
+             PERFORM 9999-TRATA-ERRO-SQL            THRU 9999-FIM.     
+                                                                       
+      501-FIM. EXIT.                                                   
+                                                                       
+                                                                       
+                                         
+      503-GERA-TRAILLER-ETP.                                           
+                                                                       
+          MOVE  SPACES               TO REG-TRAILLER-ETP.              
+                                                                       
+          MOVE  9                    TO TIPO-REG-T-ETP.                
+                                                                       
+          ACCEPT CB-ACCEPT-DATE FROM DATE                              
+          MOVE CORR CB-ACCEPT-DATE TO CB-CURRENT-DATE                  
+          MOVE CB-CURRENT-DATE TO WS-DATA-CORRENTE.                    
+          MOVE  '20'                 TO WS-SEC-SIST.                   
+          MOVE  WS-ANO-CORR          TO WS-ANO-SIST.                   
+          MOVE  WS-MES-CORR          TO WS-MES-SIST.                   
+          MOVE  WS-DIA-CORR          TO WS-DIA-SIST.                   
+          MOVE  WS-DATA-SIST-R       TO DATA-SISTEMA-T-ETP.            
+                                                                       
+          ACCEPT CB-ACCEPT-TIME FROM TIME                              
+          MOVE CB-TIME-OF-DAY TO HORA-SISTEMA-T-ETP.                   
+                                                                       
+          MOVE  WS-QTDE-ETP          TO QTDE-REGISTROS-T-ETP.          
+                                                                       
+          WRITE REG-ESTIPULANTE                                        
+           FROM REG-TRAILLER-ETP.                                      
+                                                                       
+      503-FIM. EXIT.                                                   
+                                                                       
+      9999-TRATA-ERRO-SQL.                                             
+                                                                       
+          MOVE SQLCAID          TO    WS-SQLCAID                       
+          MOVE SQLCODE          TO    WS-SQLCODE                       
+          MOVE SQLERRML         TO    WS-SQLERRML                      
+          MOVE SQLERRMC         TO    WS-SQLERRMC                      
+          MOVE SQLERRD (1)      TO    WS-SQLERRD (1)                   
+          MOVE SQLERRD (2)      TO    WS-SQLERRD (2)                   
+          MOVE SQLWARN1         TO    WS-SQLWARN1                      
+          MOVE SQLWARN2         TO    WS-SQLWARN2                      
+          MOVE SQLEXT           TO    WS-SQLEXT                        
+                                                                       
+          DISPLAY   '   '                                              
+          DISPLAY   '*-----------------------------------------------*'
+          DISPLAY   '*      DESCRICAO DE SITUACAO ANORMAL            *'
+          DISPLAY   '*-----------------------------------------------*'
+          DISPLAY   '*       PROGRAMA      :    DWSD0612             *'
+          DISPLAY   '*-----------------------------------------------*'
+          DISPLAY   '*  SQLCAID      : ' ,   WS-SQLCAID                
+          DISPLAY   '*  SQLCABC      : ' ,   WS-SQLCABC                
+          DISPLAY   '*  SQLCODE      : ' ,   WS-SQLCODE                
+          DISPLAY   '*  SQLERRML     : ' ,   WS-SQLERRML               
+          DISPLAY   '*  SQLERRMC     : ' ,   WS-SQLERRMC               
+          DISPLAY   '*  SQLERRP      : ' ,   WS-SQLERRP                
+          DISPLAY   '*  SQLERRD (1)  : ' ,   WS-SQLERRD (1)            
+          DISPLAY   '*  SQLERRD (2)  : ' ,   WS-SQLERRD (2)            
+          DISPLAY   '*  SQLWARN1     : ' ,   WS-SQLWARN1               
+          DISPLAY   '*  SQLWARN2     : ' ,   WS-SQLWARN2               
+          DISPLAY   '*  SQLEXT       : ' ,   WS-SQLEXT                 
+          DISPLAY   '*  LINE COMMAND : ' ,   WS-COMANDO                
+          DISPLAY   '*-------------------------------------------*'    
+          DISPLAY   '  '                                               
+                                                                       
+          CALL      'DSNALI'   USING SQL-CLOSE SQL-ABRT.               
+          CALL  NCOB1660  USING WS-ABEND.                              
+                                                                       
+      9999-FIM. EXIT.                                                  
