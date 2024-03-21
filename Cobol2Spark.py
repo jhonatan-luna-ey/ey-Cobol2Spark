@@ -56,7 +56,7 @@ Your task is to do the following steps:
 4. Follow best practices while crafting your code, like writing clean, well-indented, efficient, and concise code.
 5. Pay extra attention in the every data processing steps like filtering, aggregation, and sorting.
 6. Return only the PySpark code.
-  """,temperature=0.7, max_tokens=1000)
+  """,temperature=0.4, max_tokens=1000)
       responses.append(response)
       usage.append(((response.usage.prompt_tokens/1000) * 0.006)+((response.usage.completion_tokens/1000) * 0.012))
   return responses,usage
@@ -68,30 +68,5 @@ def cobol2spark(cobol_code):
     for resp in  responses:
         code = '\n\n'.join(re.findall(r'```python\n(.*?)```', resp.choices[0].message.content, re.DOTALL))
         sparks.append(code) 
-    final_sparks = '\n\n\n '.join(sparks)
-    final_code = generate(prompt=f"""Analise the following codes snippet and decipher the code.
-                            
-
-    cobol code:
-    ```
-    {cobol_code}
-    ```
-
-    Pyspark code:
-    ```
-    {final_sparks}
-    ```
-
-    Your task is to:
-
-    1. Analyze and comprehend the PySpark and cobol code snippet above.
-    2. verify if in the Spark code there is any mistake or if it is not equivalent to the COBOL code.
-    3. If there is any mistake, correct it.
-    4. If the code is not equivalent, write an equivalent PySpark code.
-    5. If some piece of the code is missing, write the missing part in PySpark
-    6. pay extra attention in every data processing steps like filtering, aggregation, and sorting.
-    7. Return only the PySpark code.""",temperature=0.4,max_tokens=1000)
-
-    usage.append(((final_code.usage.prompt_tokens/1000) * 0.006)+((final_code.usage.completion_tokens/1000) * 0.012))
-    
-    return final_sparks,final_code.choices[0].message.content,np.sum(usage)
+    final_sparks = '\n\n\n '.join(sparks)    
+    return final_sparks,np.sum(usage)

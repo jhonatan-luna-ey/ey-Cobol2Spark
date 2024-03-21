@@ -13,18 +13,17 @@ with col1:
         height = 300
     )
     if text_input:
-        generation,code, usage = chat.cobol2spark(text_input)
+        code, usage = chat.cobol2spark(text_input)
     else:
-        generation,code, usage = ("Aguardando ...","", 0)
+        code, usage = ("Aguardando ...", 0)
 
 with col2:
    st.header("PySpark")
    txt = st.text_area(
     "Output PySpark Code",
-    generation,
+    code,
     height = 300
     )
-   st.write(code)
    st.write(usage)
 
 # if prompt := st.chat_input():
