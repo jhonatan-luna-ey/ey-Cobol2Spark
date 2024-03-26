@@ -1,24 +1,29 @@
 import os
 from openai import AzureOpenAI
-from tqdm import tqdm
-import numpy as np
-import re
+import yaml
+from numpy import sum
 
-client = AzureOpenAI(
-  azure_endpoint = "https://caecoai0jiaoa01.openai.azure.com/", 
-  api_key= "14cb551b1ce5493084f689735ac91281",  
-  api_version="2024-02-15-preview"
-)
+def configure_env():
+  client = AzureOpenAI(
+    azure_endpoint = "https://swccoai0o6aoa01.openai.azure.com/", 
+    api_key= os.environ.get("OPENAI_API_KEY"),
+    api_version="2024-02-15-preview"
+  )
+  file =  open('prompts.yml', 'r')
+  prompts = yaml.load(file, Loader=yaml.FullLoader)
 
-message_text = [{"role":"system","content":"You're an expert software engineer specialized in Cobol and PySpark programming languages. your responsibility is translate Cobol codes into PySpark accurately and including all Proccess."}]
+  return client, prompts['cobol_conv'], prompts['pyspark_documentation']
 
-def generate(prompt,temperature=0.7,max_tokens=1000):
+client, cobol_conv, pyspark_documentation = configure_env()
+
+
+def generate(prompt_system,prompt,temperature=0):
+    message_text = [{"role":"system","content":prompt_system}]
     message_text.append({"role":"user","content":prompt})
     completion = client.chat.completions.create(
-    model="EY_FSO_ChatTest", # model = "deployment_name"
+    model="Cobol2Spark", # model = "deployment_name"
     messages = message_text,
     temperature=temperature,
-    max_tokens=max_tokens,
     top_p=0.95,
     frequency_penalty=0,
     presence_penalty=0,
@@ -27,46 +32,32 @@ def generate(prompt,temperature=0.7,max_tokens=1000):
     return completion
 
 
-def process_input(text_input):
-    clean_input = []
-    divisions = ["ENVIRONMENT DIVISION", "DATA DIVISION","PROCEDURE DIVISION"]
-    data_split = text_input.split('DIVISION')[2:]
-    for i,row in enumerate(data_split):
-      clean_input.append(f'{divisions[i]} {row}')
-    return clean_input
+def generate_code(cobol):
+  '''
+  This function generates the PySpark code from the Cobol code.
 
+  cobol: str
+    Cobol code
 
+  return: tuple
+    pyspark_code: str
+      PySpark code
+    documentation: str
+      Documentation of the PySpark code
+    usage: float
+      The usage of the OpenAI API
+  '''
 
-def generate_spark_code(input_text):
   usage = []
-  responses = []
-  for code in tqdm(input_text):
-      response = generate(prompt=f"""Given the following code snippet. Your role will be to decipher the code, create an equivalent PySpark code with the same functionality, including all the necessary processes.
+  response = generate(prompt_system=cobol_conv['system_message'],
+                      prompt=cobol_conv['user_message'].format(code=cobol))
+  
+  pyspark_code = response.choices[0].message.content
+  response_documentation = generate(prompt_system=pyspark_documentation['system_message'],
+                      prompt=pyspark_documentation['user_message'].format(pyspark_code=pyspark_code))
+  documentation = response_documentation.choices[0].message.content
+  usage.append(((response.usage.prompt_tokens/1000) * 0.01)+((response.usage.completion_tokens/1000) * 0.03))
+  usage.append(((response_documentation.usage.prompt_tokens/1000) * 0.01)+((response_documentation.usage.completion_tokens/1000) * 0.03))
 
-  code:
-  ```
-  {code}
-  ```
-
-Your task is to do the following steps:
-
-1. Analyze and comprehend the COBOL code snippet above.
-2. Write an equivalent PySpark code.
-3. The equivalent code should provide the exact same output as the COBOL code.
-4. Follow best practices while crafting your code, like writing clean, well-indented, efficient, and concise code.
-5. Pay extra attention in the every data processing steps like filtering, aggregation, and sorting.
-6. Return only the PySpark code.
-  """,temperature=0.4, max_tokens=1000)
-      responses.append(response)
-      usage.append(((response.usage.prompt_tokens/1000) * 0.006)+((response.usage.completion_tokens/1000) * 0.012))
-  return responses,usage
-
-def cobol2spark(cobol_code):
-    cobol_code = process_input(cobol_code)
-    responses,usage = generate_spark_code(cobol_code)
-    sparks = []
-    for resp in  responses:
-        code = '\n\n'.join(re.findall(r'```python\n(.*?)```', resp.choices[0].message.content, re.DOTALL))
-        sparks.append(code) 
-    final_sparks = '\n\n\n '.join(sparks)    
-    return final_sparks,np.sum(usage)
+  return pyspark_code, documentation , sum(usage)
+  

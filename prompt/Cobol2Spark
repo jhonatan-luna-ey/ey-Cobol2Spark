@@ -1,0 +1,21 @@
+Given the following COBOL code, convert it to PySpark code.
+The Cobol code can be found between the delimiters === COBOL START === and === COBOL END ===.
+
+```
+    === COBOL START ===
+    {code}
+    === COBOL END ===
+```
+Hints:
+    * The cobol code could have some comments, you can ignore them.
+    * The cobol code could have some data processing steps like filtering, aggregation, and sorting etc. pay attention to them.
+    * The cobol code could have data processing steps that are not present in the PySpark code, like the input and output files, filter, and sort steps. pay attention on them. If the code doesn't have any data processing steps, just ignore them.
+    * The cobol code could have some logical decisions, pay attention to them.
+    * The cobol code could have some inputs and outputs, if have you should use the following functions:
+        - the input files are in the format of CSV use: spark.read.csv('file.csv')
+        - the input files are in the format of SQL: use: spark.read.format('jdbc').options(url=database_url).load()
+  * Follow best practices while crafting your code, like writing clean, well-indented, efficient, and concise code.
+  * return the PySpark code in the following format:
+    - first, read the input files
+    - then do the data processing steps
+    - finally, write the output files
