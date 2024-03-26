@@ -3,13 +3,14 @@ from openai import AzureOpenAI
 import yaml
 from numpy import sum
 
+
 def configure_env():
   client = AzureOpenAI(
     azure_endpoint = "https://swccoai0o6aoa01.openai.azure.com/", 
     api_key= os.environ.get("OPENAI_API_KEY"),
     api_version="2024-02-15-preview"
   )
-  file =  open('prompts.yml', 'r')
+  file =  open('./prompts.yml', 'r')
   prompts = yaml.load(file, Loader=yaml.FullLoader)
 
   return client, prompts['cobol_conv'], prompts['pyspark_documentation']
